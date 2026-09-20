@@ -13,15 +13,42 @@ names the actual cause.
 
 ## Install
 
-Skills live in `~/.claude/skills/`, either globally or per project:
+This repository is a Claude Code plugin marketplace, so installing is two commands
+inside Claude Code:
 
-```bash
-git clone git@github.com:tougenrip/cross-platform-init.git /tmp/cpi
-cp -r /tmp/cpi/cross-platform-init ~/.claude/skills/
+```
+/plugin marketplace add tougenrip/cross-platform-init
+/plugin install cross-platform-init@cross-platform-init
 ```
 
-Confirm Claude can see it by asking it to list your skills, or just describe a
-cross-platform app and watch whether it loads.
+The repeated name is not a typo: the first half is the plugin, the second is the
+marketplace it came from.
+
+From a shell instead:
+
+```bash
+claude plugin marketplace add tougenrip/cross-platform-init
+```
+
+Then `/plugin` inside Claude Code to install it from the list.
+
+To pick up later changes:
+
+```bash
+claude plugin marketplace update cross-platform-init
+```
+
+### Without the plugin system
+
+The skill is a plain directory, so copying it works too:
+
+```bash
+git clone https://github.com/tougenrip/cross-platform-init.git /tmp/cpi
+cp -r /tmp/cpi/skills/cross-platform-init ~/.claude/skills/
+```
+
+Either way, confirm it is visible by describing a cross-platform app and watching
+whether the skill loads.
 
 ## Using it
 
@@ -92,7 +119,10 @@ A sample, all found by running things rather than reading documentation:
 ## Layout
 
 ```
-cross-platform-init/
+.claude-plugin/
+├── marketplace.json                      marketplace manifest
+└── plugin.json                           plugin manifest
+skills/cross-platform-init/
 ├── SKILL.md                              the workflow
 ├── references/
 │   ├── backend-supabase.md               default backend

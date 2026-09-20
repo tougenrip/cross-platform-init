@@ -1,0 +1,25 @@
+{
+  "name": "cross-platform-init",
+  "id": "cross-platform-init",
+  "owner": {
+    "name": "tougenrip",
+    "url": "https://github.com/tougenrip"
+  },
+  "metadata": {
+    "description": "One codebase for web, Android, iOS and desktop, with a Dockerized backend behind it",
+    "version": "1.0.0"
+  },
+  "plugins": [
+    {
+      "name": "cross-platform-init",
+      "source": "./",
+      "description": "Scaffolds a SvelteKit + Capacitor + Tauri codebase targeting web, Android, iOS and desktop, with a Dockerized Supabase or Postgres/MinIO backend and Redis. Includes a preflight script that reports what a machine is missing without installing anything.",
+      "version": "1.0.0",
+      "author": {
+        "name": "tougenrip"
+      },
+      "keywords": ["sveltekit", "capacitor", "tauri", "cross-platform", "supabase", "docker"],
+      "category": "workflow"
+    }
+  ]
+}
