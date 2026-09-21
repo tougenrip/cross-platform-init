@@ -16,5 +16,10 @@
     "docker",
     "scaffolding"
   ],
-  "skills": ["./skills/cross-platform-init"]
+  "skills": [
+    "./skills/cross-platform-init"
+  ],
+  "agents": [
+    "./agents/stack-installer.md"
+  ]
 }

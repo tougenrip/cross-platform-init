@@ -61,6 +61,25 @@ It asks for one thing, your app's name, because that name propagates into the di
 tells you: the workspace becomes the project directory, the bundle id is derived, the backend
 defaults to Supabase, and targets follow whatever toolchains you actually have.
 
+### Hand the whole install to an agent
+
+The plugin ships a `stack-installer` agent for when you want the stack stood up
+rather than explained. It runs the preflight, scaffolds, brings up the backend,
+builds whatever targets the machine supports, and reports per target.
+
+Ask for it directly:
+
+> Use the stack-installer agent to set up a cross-platform app called Ledger
+
+It works in its own context, so a long install does not fill up yours. It is
+instructed to install nothing that is already present, to stop rather than run
+`sudo` or start a multi-gigabyte download, and to report a target as blocked
+rather than claiming it works when it was never built.
+
+The difference between the two: the **skill** loads guidance into your
+conversation while you build alongside it; the **agent** goes away and does the
+install. Use the skill when you want to stay involved, the agent when you do not.
+
 ### Check your machine first
 
 ```bash
@@ -122,6 +141,8 @@ A sample, all found by running things rather than reading documentation:
 .claude-plugin/
 ├── marketplace.json                      marketplace manifest
 └── plugin.json                           plugin manifest
+agents/
+└── stack-installer.md                    unattended installer
 skills/cross-platform-init/
 ├── SKILL.md                              the workflow
 ├── references/

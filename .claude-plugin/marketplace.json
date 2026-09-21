@@ -13,12 +13,19 @@
     {
       "name": "cross-platform-init",
       "source": "./",
-      "description": "Scaffolds a SvelteKit + Capacitor + Tauri codebase targeting web, Android, iOS and desktop, with a Dockerized Supabase or Postgres/MinIO backend and Redis. Includes a preflight script that reports what a machine is missing without installing anything.",
+      "description": "Scaffolds a SvelteKit + Capacitor + Tauri codebase targeting web, Android, iOS and desktop, with a Dockerized Supabase or Postgres/MinIO backend and Redis. Includes a stack-installer agent that does the install unattended and a preflight script that reports what a machine is missing without installing anything.",
       "version": "1.0.0",
       "author": {
         "name": "tougenrip"
       },
-      "keywords": ["sveltekit", "capacitor", "tauri", "cross-platform", "supabase", "docker"],
+      "keywords": [
+        "sveltekit",
+        "capacitor",
+        "tauri",
+        "cross-platform",
+        "supabase",
+        "docker"
+      ],
       "category": "workflow"
     }
   ]
