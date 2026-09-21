@@ -1,6 +1,6 @@
 {
   "name": "cross-platform-init",
-  "version": "1.1.1",
+  "version": "1.2.0",
   "description": "Scaffolds a SvelteKit + Capacitor + Tauri codebase targeting web, Android, iOS and desktop, with a Dockerized Supabase or Postgres/MinIO backend and Redis behind it. Every instruction verified by execution on real devices.",
   "author": {
     "name": "tougenrip",

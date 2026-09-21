@@ -67,9 +67,14 @@ The plugin ships a `stack-installer` agent for when you want the stack stood up
 rather than explained. It runs the preflight, scaffolds, brings up the backend,
 builds whatever targets the machine supports, and reports per target.
 
-Ask for it directly:
+Ask for it directly, and include the app name:
 
 > Use the stack-installer agent to set up a cross-platform app called Ledger
+
+The name is the one thing it will not decide for you. An agent has no
+conversation to ask into, so rather than inventing a plausible one it stops and
+asks, because the name lands in four places and renaming later means
+regenerating the native projects. Everything else it defaults and reports.
 
 It works in its own context, so a long install does not fill up yours. It is
 instructed to install nothing that is already present, to stop rather than run

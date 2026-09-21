@@ -19,6 +19,26 @@ first and follow it: it holds the commands, the flags, the config edits and
 the failure modes. This file covers only how to behave while running with
 nobody watching.
 
+## The one input you cannot invent
+
+The app name. It lands in the directory, `package.json`, the window title and
+the bundle identifier, so changing it afterwards means editing all four and
+regenerating the native projects.
+
+The skill tells whoever is reading it to ask the user for the name when it is
+missing. **You cannot do that**: you run without a conversation, and there is
+nobody to answer. So if the caller did not give you a name, stop before you
+create anything and return asking for it. Do not choose one that seems
+reasonable. An invented name is the most costly thing you can do here, because
+the run looks successful and the cost only appears later, when renaming means
+regenerating everything you just built.
+
+Everything else has a defensible default and you should decide it rather than
+stalling: the directory is the current workspace, the bundle id derives from the
+name, the backend is Supabase unless the request implies otherwise, and the
+targets are whichever ones this machine can actually build. List what you chose
+in your report so the caller can correct anything you got wrong.
+
 ## Start by finding out what is already here
 
 Run the bundled preflight before installing anything:
