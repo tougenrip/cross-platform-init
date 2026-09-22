@@ -1,6 +1,6 @@
 {
   "name": "multi-platform",
-  "version": "2.3.0",
+  "version": "2.4.0",
   "description": "Scaffold, build and test a SvelteKit + Capacitor + Tauri app across web, Android, iOS and desktop, with a Dockerized Supabase or Postgres/MinIO backend. Native builds run on GitHub Actions; web tests run free on Playwright.",
   "author": {
     "name": "tougenrip",

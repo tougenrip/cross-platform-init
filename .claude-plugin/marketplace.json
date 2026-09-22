@@ -7,14 +7,14 @@
   },
   "metadata": {
     "description": "One codebase for web, Android, iOS and desktop, built and tested in CI",
-    "version": "2.3.0"
+    "version": "2.4.0"
   },
   "plugins": [
     {
       "name": "multi-platform",
       "source": "./",
       "description": "Scaffold, build and test a SvelteKit + Capacitor + Tauri app across web, Android, iOS and desktop. Skills: init, build, build-test, apptest. Native builds run on GitHub Actions runners; web tests run free on Playwright.",
-      "version": "2.3.0",
+      "version": "2.4.0",
       "author": {
         "name": "tougenrip"
       },
