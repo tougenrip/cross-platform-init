@@ -32,10 +32,23 @@ claude plugin marketplace update multi-platform
 
 | Skill | What it does | Cost |
 |---|---|---|
-| `/multi-platform:init` | Scaffolds the app and the backend, wires the platform plumbing | Local |
-| `/multi-platform:apptest` | Playwright against the web build | Free, seconds |
-| `/multi-platform:build` | Native artifacts for every platform on GitHub Actions | Free on public repos |
-| `/multi-platform:build-test` | Build, then run on emulator and simulator | Slow; metered on private repos |
+| `/multi-platform:init [app-name] [supabase\|postgres]` | Scaffolds the app and the backend | Local |
+| `/multi-platform:apptest [spec-or-pattern]` | Playwright against the web build | Free, seconds |
+| `/multi-platform:build [platforms]` | Native artifacts on GitHub Actions | Free on public repos |
+| `/multi-platform:build-test [platforms]` | Build, then run on emulator and simulator | Slow; metered on private repos |
+
+All arguments are optional and omitting one is not an error:
+
+```
+/multi-platform:init Ledger postgres     scaffolds without asking anything
+/multi-platform:init Ledger              Supabase by default, stated in a line
+/multi-platform:init                     asks for the name, nothing else
+/multi-platform:build android            one job, not five
+/multi-platform:apptest e2e/todo.spec.ts one spec while you iterate
+```
+
+Narrowing matters on the build skills: `build android` is a couple of minutes
+where the full matrix is the better part of an hour.
 
 **Use `apptest` by default.** Capacitor and Tauri wrap the same static bundle,
 so anything that is not calling a native API behaves the same in a browser.

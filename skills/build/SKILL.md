@@ -1,5 +1,6 @@
 ---
 name: build
+argument-hint: "[all|web|android|ios|linux|windows|macos]"
 description: >
   Produces native release artifacts for every platform by running the build on
   GitHub Actions: Android APK/AAB, Tauri binaries for Linux, Windows and macOS,
@@ -34,6 +35,23 @@ Nothing here needs installing, which is the main reason this is worth doing:
 
 The Android SDK being preinstalled is worth knowing: it removes the JDK version
 and `ANDROID_HOME` problems that bite on a developer machine.
+
+## Arguments
+
+`/multi-platform:build [all|web|android|ios|linux|windows|macos]`
+
+`$ARGUMENTS` is a space-separated list of platforms, empty when omitted:
+
+- **Empty** means every platform the project targets.
+- **Named platforms** narrow the run. `build android` builds one job instead of
+  five, which is the difference between a couple of minutes and the better part
+  of an hour. Prefer narrowing whenever the request is about one platform.
+- **Anything unrecognised**: say so and ask, rather than silently running
+  everything. Running the full matrix because a word was misspelled is an
+  expensive way to be wrong.
+
+Pass the selection through to the workflow with `gh workflow run -f platforms=...`
+when the workflow exposes that input, and otherwise filter the matrix locally.
 
 ## Install the workflow
 

@@ -1,5 +1,6 @@
 ---
 name: build-test
+argument-hint: "[all|web|android|ios|desktop]"
 description: >
   Builds every platform and then exercises each artifact on a real runtime: an
   Android emulator, an iOS simulator, and the desktop binaries. Use before a
@@ -40,6 +41,23 @@ in this class have real precedent in this stack:
 - An emulator needing `10.0.2.2` where a browser wants `localhost`.
 - Native plugin behaviour: camera, filesystem, push, deep links, biometrics.
 - A desktop binary that compiles and then fails to open a window.
+
+## Arguments
+
+`/multi-platform:build-test [all|web|android|ios|desktop]`
+
+`$ARGUMENTS` is a space-separated list of platforms, empty when omitted:
+
+- **Empty** means every platform the project targets.
+- **Named platforms** narrow the run. `build-test android` builds one job instead of
+  five, which is the difference between a couple of minutes and the better part
+  of an hour. Prefer narrowing whenever the request is about one platform.
+- **Anything unrecognised**: say so and ask, rather than silently running
+  everything. Running the full matrix because a word was misspelled is an
+  expensive way to be wrong.
+
+Pass the selection through to the workflow with `gh workflow run -f platforms=...`
+when the workflow exposes that input, and otherwise filter the matrix locally.
 
 ## Install the workflow
 

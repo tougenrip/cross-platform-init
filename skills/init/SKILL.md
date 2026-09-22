@@ -1,5 +1,7 @@
 ---
 name: init
+argument-hint: "[app-name] [supabase|postgres]"
+arguments: [name, backend]
 description: >
   Scaffolds the project: SvelteKit + Capacitor + Tauri targeting web, Android,
   iOS and desktop, with a Dockerized backend behind it (local Supabase, or
@@ -37,6 +39,21 @@ Capacitor and Tauri both ship a **static bundle of files**, not a Node server. S
 If the user later asks for something needing a server, say so plainly and point at the backend below or at Tauri commands (Rust side) — don't quietly re-enable SSR, which breaks both native targets.
 
 This is exactly why the backend is a separate Dockerized stack rather than SvelteKit server routes: the frontend has to stay a static bundle, so the server has to live somewhere else regardless. Scaffolding it now means `fetch` has something real to talk to from the first feature.
+
+## Arguments
+
+`/multi-platform:init [app-name] [supabase|postgres]`
+
+Both are optional and both expand to an empty string when omitted, so branch on
+whether they arrived:
+
+| Value | Given | Empty |
+|---|---|---|
+| `$name` | Use it. Do not ask again. | Ask for it, and only it. It is the one thing you cannot invent. |
+| `$backend` | `supabase` or `postgres` selects the variant; anything else, treat as unset and say why. | Default to Supabase and state the choice in one line. |
+
+So `/multi-platform:init Ledger postgres` should reach the scaffold without asking
+anything, and `/multi-platform:init` should ask exactly one question.
 
 ## Check prerequisites first, and report honestly
 
@@ -79,11 +96,11 @@ Every scaffolding command below prompts for something. In a terminal that is fin
 
 | Value | Where it comes from |
 |---|---|
-| App name | The user's request. This is the one worth asking for when it is genuinely absent. |
+| App name | `$name` if given, otherwise the user's request. This is the one worth asking for when it is genuinely absent. |
 | Directory | The current workspace, unless the user named somewhere else. Don't ask. |
 | Bundle identifier | Derive it (below). Mention the default rather than asking. |
 | Targets (iOS / Android / desktop) | The user's request; default to all, add only what their toolchain supports. |
-| Backend variant | The section further down; default Supabase. |
+| Backend variant | `$backend` if given, otherwise the section further down; default Supabase. |
 
 Ask for the app name when it is missing because it propagates: the directory, `package.json` name, window title, and bundle identifier all derive from it, and changing it afterwards means editing all four plus regenerating the native projects. One question up front is cheaper than that.
 
@@ -320,7 +337,7 @@ Native platform folders are generated; regenerating them is cheaper than resolvi
 
 Every piece of the backend runs in Docker, never installed on the host. The reason is reproducibility and cleanup: a teammate cloning the repo should get an identical stack from one command, and tearing it down should leave nothing behind. A host-installed Postgres that someone upgrades six months from now is how "works on my machine" starts.
 
-Ask the user which they want if it isn't obvious from what they're building. If they have no opinion, use Supabase and tell them why in one line.
+If `$backend` was given, it has already decided this: go straight to that variant's reference. Otherwise ask which they want if it isn't obvious from what they're building, and if they have no opinion use Supabase and tell them why in one line.
 
 **Local Supabase** is the default. One command gives Postgres, an auto-generated REST API, S3-compatible storage, auth, and a table UI. It collapses three of the four pieces below into a single dependency, which is a lot less to wire up and a lot less to break. Read `references/backend-supabase.md`.
 

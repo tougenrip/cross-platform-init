@@ -5,6 +5,11 @@ name: Build native releases
 # gated by the web build and the Playwright suite instead.
 on:
   workflow_dispatch:
+    inputs:
+      platforms:
+        description: 'Space-separated platforms, or "all"'
+        required: false
+        default: all
   push:
     tags: ['v*']
 
@@ -13,6 +18,7 @@ permissions:
 
 jobs:
   web:
+    if: ${{ contains(github.event.inputs.platforms, 'web') || github.event.inputs.platforms == 'all' || github.event.inputs.platforms == '' }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -31,6 +37,7 @@ jobs:
         with: { name: web, path: build/ }
 
   android:
+    if: ${{ contains(github.event.inputs.platforms, 'android') || github.event.inputs.platforms == 'all' || github.event.inputs.platforms == '' }}
     runs-on: ubuntu-latest          # Android SDK is preinstalled here
     timeout-minutes: 30
     steps:
@@ -57,6 +64,7 @@ jobs:
           path: android/app/build/outputs/apk/debug/*.apk
 
   desktop:
+    if: ${{ contains(github.event.inputs.platforms, 'desktop') || contains(github.event.inputs.platforms, 'linux') || contains(github.event.inputs.platforms, 'windows') || contains(github.event.inputs.platforms, 'macos') || github.event.inputs.platforms == 'all' || github.event.inputs.platforms == '' }}
     strategy:
       fail-fast: false              # one platform failing must not hide the others
       matrix:
@@ -96,6 +104,7 @@ jobs:
           if-no-files-found: warn
 
   ios:
+    if: ${{ contains(github.event.inputs.platforms, 'ios') || github.event.inputs.platforms == 'all' || github.event.inputs.platforms == '' }}
     runs-on: macos-latest
     timeout-minutes: 45
     steps:

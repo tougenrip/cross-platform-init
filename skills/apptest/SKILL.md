@@ -1,5 +1,6 @@
 ---
 name: apptest
+argument-hint: "[spec-file-or-pattern]"
 description: >
   Runs the app's web build against Playwright: fast, free, and the right default
   for checking that a change works. Use this whenever someone asks to test the
@@ -19,6 +20,19 @@ costs nothing, and needs no signing, emulator or runner.
 
 Reach for `/multi-platform:build-test` only when the thing you need to check
 genuinely cannot happen in a browser.
+
+## Arguments
+
+`/multi-platform:apptest [spec-file-or-pattern]`
+
+`$ARGUMENTS` narrows the run, and is empty when omitted:
+
+- **Empty** runs the whole suite. It is fast enough that this is usually right.
+- **A path** runs one file: `apptest e2e/todo.spec.ts`.
+- **A pattern** runs matching titles: `apptest --grep "due date"`.
+
+While iterating on one failure, narrow to it. A tight loop on a single spec is
+worth more than a full suite you stop reading.
 
 ## What this cannot tell you
 
