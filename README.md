@@ -47,7 +47,13 @@ may choose the expensive option for you.
 /multi-platform:init                     asks for both, in one message
 /multi-platform:build android            one job, not five
 /multi-platform:build                    asks which platforms
+/multi-platform:apptest                  runs the whole suite, no question
 ```
+
+`apptest` is the deliberate exception. It defaults instead of asking, because
+its default is the cheap one: seconds, free, and almost always what you wanted.
+The build skills ask precisely because their unchosen default is the expensive
+one.
 
 Narrowing matters on the build skills: `build android` is a couple of minutes
 where the full matrix is the better part of an hour.
