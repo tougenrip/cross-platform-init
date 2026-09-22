@@ -27,12 +27,23 @@ genuinely cannot happen in a browser.
 
 `$ARGUMENTS` narrows the run, and is empty when omitted:
 
-- **Empty** runs the whole suite. It is fast enough that this is usually right.
 - **A path** runs one file: `apptest e2e/todo.spec.ts`.
 - **A pattern** runs matching titles: `apptest --grep "due date"`.
+- **Empty** means the user has not chosen. Ask.
+
+**If nothing was given, ask what to run before running it.** An omitted argument
+means unchosen, not "everything". Keep the question to one line and offer the
+whole suite first, because that is usually the right answer and the suite is
+fast: something like *"whole suite, or a specific spec?"* is enough. The point is
+that the user picks the scope, not that the question is ceremony.
 
 While iterating on one failure, narrow to it. A tight loop on a single spec is
 worth more than a full suite you stop reading.
+
+Running unattended, with nobody to ask, run the whole suite and say in the
+report that the scope was not specified. This skill is cheap and safe enough
+that stalling an automated run over it would cost more than it saves, which is
+not true of the build skills.
 
 ## What this cannot tell you
 

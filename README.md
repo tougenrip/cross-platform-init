@@ -37,18 +37,25 @@ claude plugin marketplace update multi-platform
 | `/multi-platform:build [platforms]` | Native artifacts on GitHub Actions | Free on public repos |
 | `/multi-platform:build-test [platforms]` | Build, then run on emulator and simulator | Slow; metered on private repos |
 
-All arguments are optional and omitting one is not an error:
+Arguments are optional, and **anything you leave out gets asked rather than
+guessed**. An omitted argument means you have not chosen yet, not that the skill
+may choose the expensive option for you.
 
 ```
-/multi-platform:init Ledger postgres     scaffolds without asking anything
-/multi-platform:init Ledger              Supabase by default, stated in a line
-/multi-platform:init                     asks for the name, nothing else
+/multi-platform:init Ledger postgres     no questions
+/multi-platform:init Ledger              asks only about the backend
+/multi-platform:init                     asks for both, in one message
 /multi-platform:build android            one job, not five
-/multi-platform:apptest e2e/todo.spec.ts one spec while you iterate
+/multi-platform:build                    asks which platforms
 ```
 
 Narrowing matters on the build skills: `build android` is a couple of minutes
 where the full matrix is the better part of an hour.
+
+`build-test` is **user-invoked only**. Claude cannot start it, because a full
+matrix can eat a real share of a private repository's monthly minutes and that
+is not a decision to make on someone's behalf. It will tell you when it thinks
+you want it; you type the command.
 
 **Use `apptest` by default.** Capacitor and Tauri wrap the same static bundle,
 so anything that is not calling a native API behaves the same in a browser.

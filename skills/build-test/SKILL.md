@@ -1,5 +1,6 @@
 ---
 name: build-test
+disable-model-invocation: true
 argument-hint: "[all|web|android|ios|desktop]"
 description: >
   Builds every platform and then exercises each artifact on a real runtime: an
@@ -11,6 +12,15 @@ description: >
 ---
 
 # Build and test on real runtimes
+
+**This skill is user-invoked only.** `disable-model-invocation: true` means
+Claude cannot start it on its own, and that is deliberate: a full matrix can
+consume a real share of a private repository's monthly minutes, and spending
+someone's CI budget is not a call to make on their behalf. When a task seems to
+need it, say so and let the user type the command.
+
+`/multi-platform:apptest` covers most of what people actually want here, costs
+nothing, and Claude can run that freely.
 
 This runs the native artifacts on emulated hardware. It is the only way to see
 the failures that never appear in a desktop browser, and it costs enough that it
@@ -48,13 +58,22 @@ in this class have real precedent in this stack:
 
 `$ARGUMENTS` is a space-separated list of platforms, empty when omitted:
 
-- **Empty** means every platform the project targets.
+- **Empty** means the user has not chosen yet. Ask.
 - **Named platforms** narrow the run. `build-test android` builds one job instead of
   five, which is the difference between a couple of minutes and the better part
   of an hour. Prefer narrowing whenever the request is about one platform.
 - **Anything unrecognised**: say so and ask, rather than silently running
   everything. Running the full matrix because a word was misspelled is an
   expensive way to be wrong.
+
+**If no platforms were given, ask which. Do not assume all of them.**
+
+An omitted argument expands to an empty string, which means the user has not
+chosen, not that you may choose the most expensive option on their behalf.
+Running the full matrix is the costliest thing this skill can do, so it is the
+last thing to do by default. Ask, list what the project targets, and wait.
+
+Running unattended, stop and return the question rather than guessing.
 
 Pass the selection through to the workflow with `gh workflow run -f platforms=...`
 when the workflow exposes that input, and otherwise filter the matrix locally.

@@ -49,11 +49,28 @@ whether they arrived:
 
 | Value | Given | Empty |
 |---|---|---|
-| `$name` | Use it. Do not ask again. | Ask for it, and only it. It is the one thing you cannot invent. |
-| `$backend` | `supabase` or `postgres` selects the variant; anything else, treat as unset and say why. | Default to Supabase and state the choice in one line. |
+| `$name` | Use it. Do not ask again. | Ask for it. It is the one thing you cannot invent. |
+| `$backend` | `supabase` or `postgres` selects the variant; anything else, treat as unset and say why. | Ask which, with the trade-off in a line each. |
 
-So `/multi-platform:init Ledger postgres` should reach the scaffold without asking
-anything, and `/multi-platform:init` should ask exactly one question.
+**If an argument was not given, ask for it. Do not pick one.**
+
+An omitted argument expands to an empty string, so this is unambiguous: empty
+means the user has not chosen, not that you may choose for them. Put the options
+in front of them and wait. A default chosen silently is a decision the user never
+made, and they usually find out when it is expensive to undo.
+
+Running unattended, with no conversation to ask into, is the one exception:
+stop and return the question instead of guessing. A run that ends asking for one
+value costs far less than one that quietly built the wrong thing.
+
+So `/multi-platform:init Ledger postgres` reaches the scaffold without a single
+question, `/multi-platform:init Ledger` asks only about the backend, and
+`/multi-platform:init` asks for both, together, in one message rather than two.
+
+This applies to the two declared arguments, not to everything. The directory,
+bundle identifier and target platforms are all inferred, and those keep their
+defaults: state what you chose in a line and move on. The difference is that a
+declared argument is a question the skill promised to ask.
 
 ## Check prerequisites first, and report honestly
 
@@ -337,7 +354,7 @@ Native platform folders are generated; regenerating them is cheaper than resolvi
 
 Every piece of the backend runs in Docker, never installed on the host. The reason is reproducibility and cleanup: a teammate cloning the repo should get an identical stack from one command, and tearing it down should leave nothing behind. A host-installed Postgres that someone upgrades six months from now is how "works on my machine" starts.
 
-If `$backend` was given, it has already decided this: go straight to that variant's reference. Otherwise ask which they want if it isn't obvious from what they're building, and if they have no opinion use Supabase and tell them why in one line.
+If `$backend` was given, it has already decided this: go straight to that variant's reference. Otherwise ask, and wait. If the user genuinely has no preference after seeing the choice, Supabase is the one to recommend and say why, but that is a recommendation you offer rather than a default you apply.
 
 **Local Supabase** is the default. One command gives Postgres, an auto-generated REST API, S3-compatible storage, auth, and a table UI. It collapses three of the four pieces below into a single dependency, which is a lot less to wire up and a lot less to break. Read `references/backend-supabase.md`.
 
