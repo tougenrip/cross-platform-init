@@ -1,7 +1,7 @@
 {
-  "name": "cross-platform-init",
-  "version": "1.2.0",
-  "description": "Scaffolds a SvelteKit + Capacitor + Tauri codebase targeting web, Android, iOS and desktop, with a Dockerized Supabase or Postgres/MinIO backend and Redis behind it. Every instruction verified by execution on real devices.",
+  "name": "multi-platform",
+  "version": "2.0.0",
+  "description": "Scaffold, build and test a SvelteKit + Capacitor + Tauri app across web, Android, iOS and desktop, with a Dockerized Supabase or Postgres/MinIO backend. Native builds run on GitHub Actions; web tests run free on Playwright.",
   "author": {
     "name": "tougenrip",
     "url": "https://github.com/tougenrip"
@@ -15,8 +15,5 @@
     "supabase",
     "docker",
     "scaffolding"
-  ],
-  "skills": [
-    "./skills/cross-platform-init"
   ]
 }

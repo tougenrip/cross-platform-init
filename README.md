@@ -1,166 +1,124 @@
-# cross-platform-init
+# multi-platform
 
-A [Claude Code skill](https://docs.claude.com/en/docs/claude-code/skills) that scaffolds a
-single codebase targeting **web, Android, iOS and desktop**, with a Dockerized backend behind
-it, and gets it to the point where all of those actually build and run.
+One SvelteKit codebase targeting **web, Android, iOS, Windows, macOS and Linux**,
+with a Dockerized backend behind it. Native builds run on GitHub Actions, so no
+single machine has to own every toolchain.
 
-Stack: SvelteKit (static SPA) + Capacitor (mobile) + Tauri (desktop), talking to either local
-Supabase or Postgres + a custom API + MinIO, with Redis alongside.
-
-The value is not the file list. It is the ~30 things that break on the way there, each of
-which is documented with its real symptom, because almost none of them fail in a way that
-names the actual cause.
+Every instruction in this plugin was verified by running it: on Ubuntu, on a
+Samsung phone over adb, and on a Mac over SSH. The things that only appear on
+real hardware are written down because they happened, not because they seemed
+likely.
 
 ## Install
 
-This repository is a Claude Code plugin marketplace, so installing is two commands
-inside Claude Code:
-
 ```
-/plugin marketplace add tougenrip/cross-platform-init
-/plugin install cross-platform-init@cross-platform-init
+/plugin marketplace add tougenrip/multi-platform
+/plugin install multi-platform@multi-platform
 ```
-
-The repeated name is not a typo: the first half is the plugin, the second is the
-marketplace it came from.
 
 From a shell instead:
 
 ```bash
-claude plugin marketplace add tougenrip/cross-platform-init
+claude plugin marketplace add tougenrip/multi-platform
 ```
-
-Then `/plugin` inside Claude Code to install it from the list.
 
 To pick up later changes:
 
 ```bash
-claude plugin marketplace update cross-platform-init
+claude plugin marketplace update multi-platform
 ```
 
-### Without the plugin system
+## The four skills
 
-The skill is a plain directory, so copying it works too:
+| Skill | What it does | Cost |
+|---|---|---|
+| `/multi-platform:init` | Scaffolds the app and the backend, wires the platform plumbing | Local |
+| `/multi-platform:apptest` | Playwright against the web build | Free, seconds |
+| `/multi-platform:build` | Native artifacts for every platform on GitHub Actions | Free on public repos |
+| `/multi-platform:build-test` | Build, then run on emulator and simulator | Slow; metered on private repos |
 
-```bash
-git clone https://github.com/tougenrip/cross-platform-init.git /tmp/cpi
-cp -r /tmp/cpi/skills/cross-platform-init ~/.claude/skills/
-```
+**Use `apptest` by default.** Capacitor and Tauri wrap the same static bundle,
+so anything that is not calling a native API behaves the same in a browser.
+Most bugs surface there in seconds instead of in a forty-minute native matrix.
 
-Either way, confirm it is visible by describing a cross-platform app and watching
-whether the skill loads.
+Reach for `build-test` when the thing under test genuinely cannot happen in a
+browser: WebView networking, plugin behaviour, app lifecycle.
 
-## Using it
-
-Describe what you want to build. The skill is written to trigger before you finish
-explaining, because the SSR and adapter decisions it makes are baked in at scaffold time and
-are expensive to unwind afterwards.
-
-It asks for one thing, your app's name, because that name propagates into the directory,
-`package.json`, the window title and the bundle identifier. Everything else it decides and
-tells you: the workspace becomes the project directory, the bundle id is derived, the backend
-defaults to Supabase, and targets follow whatever toolchains you actually have.
-
-### Hand the whole install to an agent
+## Hand the install to an agent
 
 The plugin ships a `stack-installer` agent for when you want the stack stood up
-rather than explained. It runs the preflight, scaffolds, brings up the backend,
-builds whatever targets the machine supports, and reports per target.
+rather than explained:
 
-Ask for it directly, and include the app name:
+> Use the stack-installer agent to set up a multi-platform app called Ledger
 
-> Use the stack-installer agent to set up a cross-platform app called Ledger
+Include the name. An agent has no conversation to ask into, so rather than
+inventing one it stops and asks: the name lands in four places and renaming
+later means regenerating the native projects.
 
-The name is the one thing it will not decide for you. An agent has no
-conversation to ask into, so rather than inventing a plausible one it stops and
-asks, because the name lands in four places and renaming later means
-regenerating the native projects. Everything else it defaults and reports.
+## What the stack is
 
-It works in its own context, so a long install does not fill up yours. It is
-instructed to install nothing that is already present, to stop rather than run
-`sudo` or start a multi-gigabyte download, and to report a target as blocked
-rather than claiming it works when it was never built.
+A static SvelteKit SPA, because Capacitor and Tauri both ship files rather than
+a Node server. That one constraint drives everything else: no SSR, no server
+routes, `adapter-static` with a fallback, and a backend that lives in its own
+containers.
 
-The difference between the two: the **skill** loads guidance into your
-conversation while you build alongside it; the **agent** goes away and does the
-install. Use the skill when you want to stay involved, the agent when you do not.
+**Backend, pick one.** Local Supabase is the default and collapses Postgres, a
+REST API, storage and auth into one dependency. Postgres + your own API server +
+MinIO is there when you need an API shape PostgREST will not give you. Redis
+either way.
 
-### Check your machine first
+**Builds.** `ubuntu-latest` already has the Android SDK, `macos-latest` already
+has Xcode, `windows-latest` has MSVC and WebView2. Nothing needs installing, and
+standard runners are free for public repositories.
+
+## Check your machine first
 
 ```bash
-bash ~/.claude/skills/cross-platform-init/scripts/preflight.sh web backend desktop android ios
+bash ~/.claude/plugins/marketplaces/multi-platform/skills/init/scripts/preflight.sh web backend desktop android ios
 ```
 
-Pass only the targets you care about. It reports what is present, what is missing and the
-exact command for your platform, and it installs nothing: several fixes need `sudo`, and that
-is your call rather than an agent's.
+It reports what is missing and installs nothing, because several fixes need
+`sudo` and that is yours to decide. It checks for the thing being *selected* and
+*running*, not merely present: a JDK that is installed but not the default, an
+Xcode that exists while `xcode-select` points at the Command Line Tools, an
+`ANDROID_HOME` set in a shell config a non-interactive shell never reads.
 
-It is deliberately careful about the difference between absent and merely unusable. On real
-machines "missing" is usually one of: not on this shell's PATH, installed but not selected,
-installed but the wrong version, a variable set in a shell config the agent never reads, or a
-daemon that is not running. Each of those wants a different fix and none of them is
-"install it".
+## Things that cost an evening to learn
 
-## Verified, not asserted
-
-Every claim in the skill was executed on real hardware. Where a claim could not be tested, it
-says so rather than guessing.
-
-| Target | Status | Verified by |
-|---|---|---|
-| Web | Working | Build, then full CRUD against a live Postgres |
-| Android | Working | APK built, installed on a physical Samsung, live reads and writes |
-| iOS | Working | Simulator on macOS 26, live data across the LAN |
-| Linux desktop | Working | Tauri window built and launched |
-| Windows desktop | **Untested** | No Windows machine available |
-
-Windows is the honest gap. The Tauri source is shared with Linux, but nothing has been run
-there, and on this project's record that means it probably hides two or three problems.
-
-## What it knows that you would otherwise learn the hard way
-
-A sample, all found by running things rather than reading documentation:
-
-- `svelte.config.js` no longer exists. Current SvelteKit configures the adapter inside the
-  `sveltekit()` plugin in `vite.config.ts`.
-- Scaffolding without the static adapter add-on silently gives you `adapter-auto`, which
-  emits something no native shell can load.
-- Android blocks cleartext HTTP, and Capacitor does **not** exempt it for you.
-- Even with cleartext allowed, Android serves the app from `https://localhost`, so an
-  `http://` API is blocked as mixed content. That is a separate mechanism, invisible outside
-  `adb logcat`, and the fix is `androidScheme: 'http'` under `server`, not under `android`.
-- iOS has no equivalent problem, because it serves from `capacitor://localhost`, which is not
-  an HTTPS origin. Do not add ATS exemptions to fix a problem you do not have.
-- Xcode 26 installs with no iOS platform. Nothing builds until you download it, and the error
-  says `Found no destinations for the scheme`.
-- CocoaPods is not needed to start. Capacitor 8 generates a Swift Package Manager project, so
-  there is no `App.xcworkspace` and most build snippets online now fail.
-- MinIO is no longer on Docker Hub. The pull fails with an authentication error that sends
-  people hunting for credentials they do not need.
-- `VITE_` variables are inlined at build time, so editing `.env` changes nothing on a device
-  until you rebuild and re-sync.
+- SvelteKit no longer generates `svelte.config.js`. The adapter is configured
+  inside the `sveltekit()` plugin in `vite.config.ts`.
+- `--no-add-ons` gives you `adapter-auto`, which emits something no native shell
+  can load.
+- `tauri init` has no identifier flag. It writes `com.tauri.dev` and refuses to
+  bundle until you change it.
+- Capacitor 8 uses Swift Package Manager, so there is no `App.xcworkspace` and
+  CocoaPods is not needed to start.
+- A freshly installed Xcode 26 contains **no iOS platform**. Nothing builds
+  until `xcodebuild -downloadPlatform iOS` finishes.
+- Android serves the app from `https://localhost`, so a plain `http://` API call
+  is blocked as mixed content. iOS uses `capacitor://localhost` and is fine.
+  Same code, one platform fails.
+- `VITE_` values are inlined at build time. Editing `.env` changes nothing until
+  you rebuild and `cap sync`.
 
 ## Layout
 
 ```
-.claude-plugin/
-├── marketplace.json                      marketplace manifest
-└── plugin.json                           plugin manifest
-agents/
-└── stack-installer.md                    unattended installer
-skills/cross-platform-init/
-├── SKILL.md                              the workflow
-├── references/
-│   ├── backend-supabase.md               default backend
-│   └── backend-postgres-minio.md         Postgres + custom API + MinIO
-└── scripts/
-    └── preflight.sh                      prerequisite checker
+.claude-plugin/          marketplace.json, plugin.json
+agents/stack-installer.md
+skills/
+├── init/                scaffold: SKILL.md, references/, scripts/preflight.sh
+├── apptest/             Playwright: SKILL.md, assets/apptest.yml
+├── build/               native builds: SKILL.md, assets/build.yml
+└── build-test/          emulator + simulator: SKILL.md, assets/build-test.yml
 ```
 
-The two backend files are alternatives, not layers. The skill reads whichever one it picks.
+## Limits
 
-## A note on the checks
+iOS and macOS builds need a Mac, which is what the GitHub Actions runners are
+for. Real-device testing is not covered by emulators: a phone sits on a
+different network than the host, which is the difference behind several of the
+hardest bugs here. Firebase Test Lab's free tier gives 5 physical and 10 virtual
+device runs a day if that matters.
 
-`preflight.sh` covers the failures encountered so far, not every way a machine can differ. If
-it passes and a build still fails, the script is incomplete rather than the machine wrong:
-find the real cause, fix the script, and say what changed.
+MIT.

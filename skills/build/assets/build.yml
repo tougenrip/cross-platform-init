@@ -1,0 +1,126 @@
+name: Build native releases
+
+# Deliberately not on every push: a full native matrix is slow, and on a
+# private repo the macOS job bills at ~10x Linux. Ordinary pushes should be
+# gated by the web build and the Playwright suite instead.
+on:
+  workflow_dispatch:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: read
+
+jobs:
+  web:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm }
+      - run: npm ci
+      - name: Build and confirm the static adapter
+        run: |
+          npm run build | tee /tmp/build.log
+          grep -q "adapter-static" /tmp/build.log || {
+            echo "::error::adapter-static was not used; native shells cannot load this output"
+            exit 1
+          }
+      - uses: actions/upload-artifact@v4
+        with: { name: web, path: build/ }
+
+  android:
+    runs-on: ubuntu-latest          # Android SDK is preinstalled here
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm }
+      - uses: actions/setup-java@v4
+        with: { distribution: temurin, java-version: 21 }
+      - run: npm ci
+      - run: npm run build
+      - name: Add the Android platform if it is not committed
+        run: |
+          # android/ is usually gitignored, so regenerate it on the runner.
+          if [ ! -d android ]; then
+            npm i @capacitor/android
+            npx cap add android
+          fi
+          npx cap sync android
+      - run: ./gradlew assembleDebug
+        working-directory: android
+      - uses: actions/upload-artifact@v4
+        with:
+          name: android-apk
+          path: android/app/build/outputs/apk/debug/*.apk
+
+  desktop:
+    strategy:
+      fail-fast: false              # one platform failing must not hide the others
+      matrix:
+        include:
+          - os: ubuntu-latest
+            name: linux
+          - os: windows-latest
+            name: windows
+          - os: macos-latest
+            name: macos
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm }
+      - uses: dtolnay/rust-toolchain@stable
+
+      # Tauri's Linux system libraries. Not needed on Windows or macOS.
+      - name: Install Linux build dependencies
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev build-essential curl wget file \
+            libxdo-dev libssl-dev libayatana-appindicator3-dev librsvg2-dev libdbus-1-dev pkg-config
+
+      - uses: swatinem/rust-cache@v2
+        with: { workspaces: src-tauri }
+
+      - run: npm ci
+      - run: npm run tauri build
+      - uses: actions/upload-artifact@v4
+        with:
+          name: desktop-${{ matrix.name }}
+          path: |
+            src-tauri/target/release/bundle/**/*
+          if-no-files-found: warn
+
+  ios:
+    runs-on: macos-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm }
+      - run: npm ci
+      - run: npm run build
+      - name: Add the iOS platform if it is not committed
+        run: |
+          if [ ! -d ios ]; then
+            npm i @capacitor/ios
+            npx cap add ios
+          fi
+          npx cap sync ios
+      # Unsigned simulator build: no certificate, no provisioning profile.
+      # Capacitor 8 generates a Swift Package Manager project, so there is no
+      # .xcworkspace to pass here.
+      - name: Build for the simulator
+        working-directory: ios/App
+        run: |
+          xcodebuild -scheme App -project App.xcodeproj -configuration Debug \
+            -sdk iphonesimulator -derivedDataPath build \
+            -destination "generic/platform=iOS Simulator" build
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ios-app
+          path: ios/App/build/Build/Products/Debug-iphonesimulator/*.app

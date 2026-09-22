@@ -1,0 +1,155 @@
+name: Build and test on real runtimes
+
+# Manual only. This matrix is slow everywhere and, on a private repository,
+# bills macOS minutes at ~10x Linux. Use the Playwright workflow for pushes.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  web:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm }
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npm run build
+      - run: npx playwright test --reporter=list
+
+  android:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm }
+      - uses: actions/setup-java@v4
+        with: { distribution: temurin, java-version: 21 }
+
+      # Without this the emulator falls back to software rendering and the job
+      # takes many times longer.
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' \
+            | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - run: npm ci
+      - run: npm run build
+      - name: Prepare the Android project
+        run: |
+          if [ ! -d android ]; then
+            npm i @capacitor/android
+            npx cap add android
+          fi
+          npx cap sync android
+
+      - name: Run instrumented tests on an emulator
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 34
+          target: google_apis
+          arch: x86_64
+          disable-animations: true
+          # Replace with the project's own device tests. Launching the app and
+          # reading logcat already catches the WebView failures that a browser
+          # cannot reproduce.
+          script: |
+            adb install -r android/app/build/outputs/apk/debug/app-debug.apk || \
+              (cd android && ./gradlew assembleDebug && adb install -r app/build/outputs/apk/debug/app-debug.apk)
+            adb logcat -c
+            adb shell monkey -p "$(node -p "require('./capacitor.config.json').appId" 2>/dev/null || echo com.example.app)" -c android.intent.category.LAUNCHER 1
+            sleep 15
+            adb logcat -d > logcat.txt
+            # Mixed content and cleartext blocks appear here and nowhere else.
+            if grep -qiE "Mixed Content|CLEARTEXT communication|ERR_CLEARTEXT" logcat.txt; then
+              echo "::error::WebView blocked a request; see logcat artifact"
+              grep -iE "Mixed Content|CLEARTEXT" logcat.txt | head
+              exit 1
+            fi
+
+      - uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() }}
+        with: { name: android-logcat, path: logcat.txt, if-no-files-found: ignore }
+
+  ios:
+    runs-on: macos-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm }
+      - run: npm ci
+      - run: npm run build
+      - name: Prepare the iOS project
+        run: |
+          if [ ! -d ios ]; then
+            npm i @capacitor/ios
+            npx cap add ios
+          fi
+          npx cap sync ios
+
+      - name: Build for the simulator
+        working-directory: ios/App
+        run: |
+          xcodebuild -scheme App -project App.xcodeproj -configuration Debug \
+            -sdk iphonesimulator -derivedDataPath build \
+            -destination "generic/platform=iOS Simulator" build
+
+      - name: Boot a simulator and launch the app
+        run: |
+          DEVICE=$(xcrun simctl create test-device \
+            "$(xcrun simctl list devicetypes -j | node -p "JSON.parse(require('fs').readFileSync(0)).devicetypes.filter(d=>d.name.includes('iPhone')).pop().identifier")")
+          xcrun simctl boot "$DEVICE"
+          APP=$(find ios/App/build -name "*.app" -maxdepth 6 | head -1)
+          xcrun simctl install "$DEVICE" "$APP"
+          BUNDLE=$(node -p "require('./capacitor.config.json').appId")
+          xcrun simctl launch "$DEVICE" "$BUNDLE"
+          sleep 10
+          xcrun simctl io "$DEVICE" screenshot ios-launch.png
+
+      - uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() }}
+        with: { name: ios-launch, path: ios-launch.png, if-no-files-found: ignore }
+
+  desktop:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { os: ubuntu-latest,  name: linux }
+          - { os: windows-latest, name: windows }
+          - { os: macos-latest,   name: macos }
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm }
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Install Linux build dependencies
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev build-essential curl wget file \
+            libxdo-dev libssl-dev libayatana-appindicator3-dev librsvg2-dev libdbus-1-dev pkg-config xvfb
+      - uses: swatinem/rust-cache@v2
+        with: { workspaces: src-tauri }
+      - run: npm ci
+      - run: npm run tauri build
+
+      # A runner has no display, so the Linux binary needs a virtual one.
+      - name: Smoke-test the binary
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          BIN=$(find src-tauri/target/release -maxdepth 1 -type f -executable | head -1)
+          timeout 20 xvfb-run -a "$BIN" || code=$?
+          # 124 means it was still running when the timeout fired, which is the
+          # outcome we want from an app that opened a window and stayed up.
+          [ "${code:-0}" = "124" ] || { echo "::error::binary exited early ($code)"; exit 1; }

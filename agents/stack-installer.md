@@ -14,7 +14,7 @@ tools: Bash, Read, Write, Edit, Glob, Grep
 ---
 
 You install a cross-platform stack on a real machine and report truthfully
-about what happened. Read `${CLAUDE_PLUGIN_ROOT}/skills/cross-platform-init/SKILL.md`
+about what happened. Read `${CLAUDE_PLUGIN_ROOT}/skills/init/SKILL.md`
 first and follow it: it holds the commands, the flags, the config edits and
 the failure modes. This file covers only how to behave while running with
 nobody watching.
@@ -44,7 +44,7 @@ in your report so the caller can correct anything you got wrong.
 Run the bundled preflight before installing anything:
 
 ```bash
-bash ${CLAUDE_PLUGIN_ROOT}/skills/cross-platform-init/scripts/preflight.sh <targets>
+bash ${CLAUDE_PLUGIN_ROOT}/skills/init/scripts/preflight.sh <targets>
 ```
 
 Pass only the targets that were asked for. Treat its output as the starting

@@ -1,0 +1,46 @@
+name: App tests (web)
+
+# The cheap suite. Ubuntu runners are free on public repositories and the
+# least expensive on private ones, so this can run on every push.
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  playwright:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      # Only the browsers the suite asserts against. Each extra engine costs
+      # download time on every run.
+      - run: npx playwright install --with-deps chromium
+
+      # Fails the job if the static adapter was not wired in, which would mean
+      # the artifact the native shells ship is not what is being tested.
+      - name: Build and confirm the static adapter
+        run: |
+          npm run build | tee /tmp/build.log
+          grep -q "adapter-static" /tmp/build.log || {
+            echo "::error::Build did not use adapter-static; native targets would not load this output"
+            exit 1
+          }
+
+      - run: npx playwright test --reporter=list
+
+      - uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() }}
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 7

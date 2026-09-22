@@ -1,6 +1,17 @@
 ---
-name: cross-platform-init
-description: Scaffolds a full-stack cross-platform project - SvelteKit + Capacitor + Tauri on the front, and a Dockerized backend (local Supabase, or Postgres + API server + MinIO) with a Redis cache behind it. Use this BEFORE the user describes what they want to build - the moment they mention starting a cross-platform app, a Svelte app, Capacitor, Tauri, or "an app that runs on mobile and desktop", run this first so the foundation exists before any feature work. Also use when adding Capacitor, Tauri, a database, object storage, a cache, or Docker Compose to an existing Svelte project, when the user asks for a local dev stack or "the whole backend", or when a Svelte build fails on mobile/desktop because of SSR or adapter misconfiguration.
+name: init
+description: >
+  Scaffolds the project: SvelteKit + Capacitor + Tauri targeting web, Android,
+  iOS and desktop, with a Dockerized backend behind it (local Supabase, or
+  Postgres + API server + MinIO) and a Redis cache. Use this BEFORE the user
+  finishes describing what they want to build, the moment they mention starting
+  a cross-platform app, a Svelte app, Capacitor or Tauri, or an app that runs on
+  mobile and desktop, so the foundation exists before any feature work. Also use
+  when adding Capacitor, Tauri, a database, object storage, a cache or Docker
+  Compose to an existing Svelte project, when the user asks for a local dev
+  stack or "the whole backend", or when a build fails on mobile or desktop
+  because of SSR or adapter misconfiguration. Once a project exists, testing is
+  /multi-platform:apptest and native artifacts are /multi-platform:build.
 ---
 
 # Cross-platform base: SvelteKit + Capacitor + Tauri
@@ -505,3 +516,11 @@ Say it once, then respect whatever they choose. If they keep both, the split tha
 ## After the scaffold
 
 Now let the user describe their project. Build features into `src/routes/` and `src/lib/` as normal Svelte, and put anything needing a database, a secret, or the cache behind the API. The platform plumbing and the data layer are both done and shouldn't need revisiting.
+
+The rest of the plugin picks up from here:
+
+| Skill | Use it for |
+|---|---|
+| `/multi-platform:apptest` | Testing a change. Playwright against the web build: fast, free, and right for anything that is not a native API. Reach for this by default. |
+| `/multi-platform:build` | Native artifacts for every platform, built on GitHub Actions runners that already have the SDKs and Xcode. |
+| `/multi-platform:build-test` | Build plus emulator and simulator runs. Slow, and costly on a private repo, so it belongs before a release rather than on every push. |
